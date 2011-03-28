@@ -9,7 +9,7 @@ For extra flare, [Crap4J][crap4j] is tied to the test task for TDD competitions.
 First time only
 ===
  * gradle eclipse test   
-OR   
+ *    **OR** 
  * gradle idea test   (for IntelliJ)   
  
 Subsequent times
