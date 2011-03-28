@@ -1,0 +1,153 @@
+//System.properties["http.proxyHost"]="http-proxy.cuc.com"
+//System.properties["http.proxyPort"]="80"
+apply plugin: 'groovy'
+apply plugin: 'eclipse'
+repositories {
+    mavenCentral()
+}
+dependencies {
+    groovy 'org.codehaus.groovy:groovy:1.7.6'
+    testCompile 'junit:junit:4.8.2'
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ===========================
+// INIT PROJECT (with eclipse)
+// ===========================
+buildscript {
+    projectName=project.name.replace(" ","").replace("-","").replace(".","").replace("'","")
+}
+eclipseClasspath.doFirst {
+	println ":initProject"
+    def defaultPackage = "com/${projectName}"
+    ['java', 'groovy'].each {
+        sourceSets.all."${it}".srcDirs.each { dirs ->
+            dirs.each { dir ->
+                def newDir = new File(dir, defaultPackage)
+                logger.info "Creating directory $newDir"
+                newDir.mkdirs()
+				def createFile = { namePart ->
+					def file = new File("$newDir/Main${it[0].toUpperCase()}${namePart}.${it}")
+					if (!file.exists()) {
+						file.text = this."${namePart.toUpperCase()}_TEMPLATE"(it)
+					}
+				}
+                if (dir.path.contains("main")) {
+                    createFile("")
+                }
+                else if (dir.path.contains("test")) {
+                    createFile("Test")
+                }
+            }
+        }
+    }
+}
+def _TEMPLATE (language) {
+"""package com.${projectName};
+
+public class Main${language[0].toUpperCase()} {    
+    public static void main(String[] args) {
+        System.out.println("Welcome to ${projectName}");
+    }
+}"""
+}
+def TEST_TEMPLATE(language) {
+"""package com.${projectName};
+                    
+import static org.junit.Assert.*;
+import org.junit.Test;
+
+public class Main${language[0].toUpperCase()}Test {
+    @Test 
+    public void testMain() {
+        assertNotNull(new Main${language[0].toUpperCase()}());
+    }
+}"""
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ===========================
+// CRAP4J (with test)
+// ===========================
+repositories {
+ 	add(new org.apache.ivy.plugins.resolver.URLResolver()) {
+		name = 'absoluteUrlPathJar'
+		addArtifactPattern('http://[organization]/[artifact]')
+	}
+}
+configurations {
+	crap
+}
+dependencies {
+	crap "www.crap4j.org/downloads:crap4j_ant_latest.jar"
+	//crap "www.java2s.com/Code/JarDownload:ant-junitfactory.jar.zip"
+}
+testClasses.doLast {	
+	def crap4jHome = makeCrap4jHome()
+    System.properties["CRAP4J_HOME"] = crap4jHome
+    ant.taskdef(name: "crap4j", classname: "org.crap4j.anttask.Crap4jAntTask") {
+        classpath {
+            fileset(dir:"$crap4jHome/lib", includes:"**/*.jar")
+        }
+    }
+    ant.crap4j(projectdir: ".", outputDir: "$testResultsDir/crap4j", 
+               downloadAverages: false)
+    {
+		classes(path: sourceSets.main.classesDir.absolutePath)
+		srces(path: sourceSets.main.java.srcDirs)
+		testClasses(path: sourceSets.test.classesDir.absolutePath)
+        libClasspath {
+            pathelement(path: configurations.testCompile.asPath)
+            fileset(dir: "$crap4jHome/lib", includes:"**/*.jar")
+        }
+    }
+    ant.delete(dir: "agitar")
+    ant.delete(file: "crap_build.xml")
+}
+def makeCrap4jHome() {
+	def downloads = []
+	configurations.crap.each {
+		downloads << it
+	}
+	ant.unzip(src: downloads[0], dest: downloads[0].parent)
+	def slashes = { it.replaceAll('\\\\', '/') }
+	def crap4jHome = slashes("${downloads[0].parent}/crap4j")
+	//ant.unzip(src: downloads[1], dest: "$crap4jHome/lib")
+	return crap4jHome
+}
