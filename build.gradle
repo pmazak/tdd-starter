@@ -130,8 +130,8 @@ testClasses.doLast {
     def crap4jHome = makeCrap4jHome()
     System.properties["CRAP4J_HOME"] = crap4jHome
     ant.taskdef(name: "crap4j", classname: "org.crap4j.anttask.Crap4jAntTask") {
-        classpath {
-            fileset(dir:"$crap4jHome/lib", includes:"**/*.jar")
+        ant.classpath {
+            ant.fileset(dir:"$crap4jHome/lib", includes:"**/*.jar")
         }
     }
     ant.crap4j(projectdir: ".", outputDir: "$testResultsDir/crap4j", 
@@ -141,8 +141,8 @@ testClasses.doLast {
         srces(path: sourceSets.main.java.srcDirs)
         testClasses(path: sourceSets.test.classesDir.absolutePath)
         libClasspath {
-            pathelement(path: configurations.testCompile.asPath)
-            fileset(dir: "$crap4jHome/lib", includes:"**/*.jar")
+            ant.pathelement(path: configurations.testCompile.asPath)
+            ant.fileset(dir: "$crap4jHome/lib", includes:"**/*.jar")
         }
     }
     ant.delete(dir: "agitar")
